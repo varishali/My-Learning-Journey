@@ -2,6 +2,8 @@ import os
 import re
 from difflib import SequenceMatcher
 from colorama import Fore, Style, init
+import pandas as pd
+from tabulate import tabulate 
 
 init(autoreset=True)
 
@@ -25,11 +27,6 @@ def calculate_similarity(text1, text2):
     return round(matcher.ratio() * 100, 2)
 
 def check_plagiarism_in_folder(folder_path):
-    
-    print(Fore.RED + "\n" + "="*70)
-    print(Fore.CYAN + "              SMART AUTOMATED ASSIGNMENT PLAGIARISM CHECKER                ")
-    print(Fore.RED + "="*70 + "\n")
-    
 
     if not os.path.exists(folder_path):
         print(f"Error: Folder '{folder_path}' nahi mila! Folder path check karein.")
@@ -42,12 +39,16 @@ def check_plagiarism_in_folder(folder_path):
         print("Comparison ke liye kam se kam 2 files (.py ya .txt) honi chahiye!")
         return
 
+    print(Fore.CYAN + Style.BRIGHT + "-" * 70)
+    print(Fore.CYAN + Style.BRIGHT + "            SMART AUTOMATED ASSIGNMENT PLAGIARISM CHECKER             ")
+    print(Fore.CYAN + Style.BRIGHT  + "-" * 70)
+    print(Fore.WHITE + f"Total Assignments Found: {len(files)} files")
+    print(Fore.WHITE + "Comparing all student submissions...\n")
     print(Fore.YELLOW + "-" * 70)
-    print(f"Total Assignments Found: {len(files)} files")
-    print("Comparing all student submissions...\n")
-    print(Fore.YELLOW + "-" * 70)
-    print(f"{'Student File 1':<20} | {'Student File 2':<20} | {'Match %':<10} | {'Status'}")
-    print(Fore.YELLOW + "-" * 70)
+
+
+    result_data = []
+
 
     # All Pairs Comparison
     for i in range(len(files)):
@@ -75,10 +76,26 @@ def check_plagiarism_in_folder(folder_path):
             else:
                 status = "SAFE / UNIQUE"
 
-            print(f"{files[i]:<20} | {files[j]:<20} | {match_score:>6}%   | {status}")
+            # Store result in list for pandas DataFrame
+            result_data.append({
+                "Student File 1": files[i],
+                "Student File 2": files[j],
+                "Match %": f"{match_score:.2f}%",
+                "Status": status
+            })
 
-    print(Fore.YELLOW + "-" * 70)
-    print(Fore.BLUE + "Plagiarism Check Complete!\n")
+    # Pandas DataFrame Output
+    df = pd.DataFrame(result_data)    
+    print(Fore.GREEN + Style.BRIGHT + "\n---------------------  PANDAS DATAFRAME REPORT  ----------------------\n")  
+
+    # grid border table formating
+    formatted_table = tabulate(df, headers='keys', tablefmt='fancy_grid',showindex=False)
+    print(Fore.LIGHTCYAN_EX + formatted_table)
+
+    # csv file export
+    report_filename = "plagiarism_report.csv"
+    df.to_csv(report_filename, index=False)
+    print(Fore.YELLOW + f"\nReport successfully saved as '{report_filename}")          
 
 if __name__ == "__main__":
     # Assignments folder ka path
